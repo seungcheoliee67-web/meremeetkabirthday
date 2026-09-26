@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Happiest Birthday, Meet!</title>
+  <!-- Pixel Art Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <!-- Canvas Confetti Library -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #fef08a; /* Bright yellow background */
+      font-family: 'Press Start 2P', monospace;
+      color: #ec4899;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Screen Wrapper Container */
+    .app-container {
+      width: 100%;
+      max-width: 400px;
+      height: 100vh;
+      max-height: 820px;
+      background-color: #fef9c3;
+      border: 6px solid #f472b6;
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 15px;
+    }
+
+    /* Floating Pixel Balloons Background */
+    .balloon-bg {
+      position: absolute;
+      top: 10px;
+      width: 90%;
+      display: flex;
+      justify-content: space-between;
+      z-index: 1;
+      pointer-events: none;
+    }
+    
+    .pixel-balloon {
+      width: 32px;
+      height: 40px;
+      background-color: #f472b6;
+      border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+      position: relative;
+      border: 3px solid #db2777;
+    }
+    .pixel-balloon.yellow {
+      background-color: #fde047;
+      border-color: #eab308;
+    }
+    .pixel-balloon::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 10px;
+      background-color: #db2777;
+    }
+
+    /* Floating Pixel Dots Pattern */
+    .confetti-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background-image: 
+        radial-gradient(#f472b6 2px, transparent 2px),
+        radial-gradient(#fde047 2px, transparent 2px);
+      background-size: 30px 30px;
+      background-position: 0 0, 15px 15px;
+      opacity: 0.4;
+      z-index: 0;
+    }
+
+    /* Page Navigation */
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      text-align: center;
+    }
+    .screen.active {
+      display: flex;
+    }
+
+    /* Pixel Box Outline Frame */
+    .pixel-box {
+      background-color: #ffffff;
+      border: 4px solid #f472b6;
+      border-radius: 16px;
+      padding: 20px 15px;
+      width: 90%;
+      box-shadow: 4px 4px 0px #db2777;
+      margin-bottom: 20px;
+    }
+
+    /* Pixel Buttons */
+    .pixel-btn {
+      background-color: #f472b6;
+      color: #ffffff;
+      border: 3px solid #db2777;
+      border-radius: 20px;
+      padding: 12px 22px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 11px;
+      cursor: pointer;
+      box-shadow: 0px 4px 0px #9d174d;
+      transition: transform 0.1s, box-shadow 0.1s;
+      margin-top: 15px;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .pixel-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0px 0px 0px #9d174d;
+    }
+
+    /* PAGE 1 */
+    .p1-title {
+      font-size: 12px;
+      line-height: 1.8;
+      color: #db2777;
+    }
+
+    /* PAGE 2: Balloon Game */
+    .balloon-container {
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+      margin: 30px 0;
+    }
+    .game-balloon {
+      width: 65px;
+      height: 80px;
+      background-color: #27272a;
+      border: 3px solid #000000;
+      border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 2px 4px 0px rgba(0,0,0,0.2);
+    }
+    .game-balloon::after {
+      content: '';
+      position: absolute;
+      bottom: -15px;
+      width: 2px;
+      height: 15px;
+      background-color: #000;
+    }
+    .game-balloon.popped {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+    }
+    .game-balloon.popped::after {
+      display: none;
+    }
+    .popped-text {
+      display: none;
+      font-size: 10px;
+      color: #000000;
+      background: #ffffff;
+      border: 3px dashed #000000;
+      padding: 10px 4px;
+      border-radius: 8px;
+      animation: popAnim 0.3s ease-out forwards;
+    }
+    .game-balloon.popped .popped-text {
+      display: block;
+    }
+
+    @keyframes popAnim {
+      0% { transform: scale(0.3); }
+      80% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    /* PAGE 3: Cake & Candle */
+    .cake-container {
+      position: relative;
+      margin: 20px 0;
+      cursor: pointer;
+    }
+    .pixel-cake {
+      width: 140px;
+      height: 90px;
+      background-color: #fbcfe8;
+      border: 4px solid #db2777;
+      border-radius: 12px 12px 4px 4px;
+      position: relative;
+      margin-top: 30px;
+    }
+    .cake-icing {
+      width: 100%;
+      height: 25px;
+      background-color: #ffffff;
+      border-bottom: 4px solid #db2777;
+      border-radius: 8px 8px 12px 12px;
+    }
+    .candle {
+      width: 10px;
+      height: 30px;
+      background-color: #fde047;
+      border: 2px solid #eab308;
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .flame {
+      width: 12px;
+      height: 16px;
+      background-color: #f97316;
+      border-radius: 50% 50% 20% 20%;
+      position: absolute;
+      top: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      box-shadow: 0 0 8px #f97316;
+      animation: flicker 0.6s infinite alternate;
+    }
+    .flame.off {
+      display: none;
+    }
+    .smoke {
+      display: none;
+      width: 6px;
+      height: 12px;
+      background-color: #9ca3af;
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 4px;
+      opacity: 0.7;
+    }
+    .candle.blown .smoke {
+      display: block;
+      animation: rise 1s forwards;
+    }
+
+    @keyframes flicker {
+      0% { transform: translateX(-50%) scale(1); }
+      100% { transform: translateX(-50%) scale(1.2); }
+    }
+    @keyframes rise {
+      0% { transform: translate(-50%, 0) scale(1); opacity: 0.8; }
+      100% { transform: translate(-50%, -20px) scale(2); opacity: 0; }
+    }
+
+    /* PAGE 4: Envelope */
+    .envelope {
+      width: 180px;
+      height: 120px;
+      background-color: #ffffff;
+      border: 4px solid #db2777;
+      position: relative;
+      margin: 30px 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 8px;
+    }
+    .envelope-flap {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+      border-left: 90px solid transparent;
+      border-right: 90px solid transparent;
+      border-top: 60px solid #fbcfe8;
+      transform-origin: top;
+    }
+    .envelope-heart {
+      font-size: 24px;
+      color: #db2777;
+      z-index: 2;
+    }
+
+    /* PAGE 5: Letter */
+    .letter-box {
+      background-color: #ffffff;
+      border: 4px solid #f472b6;
+      border-radius: 12px;
+      padding: 15px 12px;
+      width: 95%;
+      max-height: 440px;
+      overflow-y: auto;
+      text-align: left;
+      font-size: 8px;
+      line-height: 1.8;
+      color: #9d174d;
+      box-shadow: 3px 3px 0px #f472b6;
+    }
+
+    /* PAGE 6: Exact Reference Pixel Art Sunflower */
+    .pixel-sunflower-wrapper {
+      margin: 15px 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transform-origin: bottom center;
+      animation: pixelSway 2.5s infinite ease-in-out alternate;
+    }
+
+    .pixel-sunflower-svg {
+      width: 100px;
+      height: 120px;
+      image-rendering: pixelated;
+    }
+
+    @keyframes pixelSway {
+      0% {
+        transform: rotate(-3deg) translateY(0px);
+      }
+      50% {
+        transform: rotate(0deg) translateY(-2px);
+      }
+      100% {
+        transform: rotate(3deg) translateY(0px);
+      }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #fef08a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #f472b6;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Floating Pixel Balloons Top Background -->
+    <div class="balloon-bg">
+      <div class="pixel-balloon"></div>
+      <div class="pixel-balloon yellow"></div>
+      <div class="pixel-balloon"></div>
+      <div class="pixel-balloon yellow"></div>
+    </div>
+
+    <!-- Background Grid -->
+    <div class="confetti-bg"></div>
+
+    <!-- PAGE 1: Welcome -->
+    <div class="screen active" id="page1">
+      <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+        <div class="pixel-box">
+          <p class="p1-title">Are you ready<br>for your surprise,<br>My Sunflower?</p>
+        </div>
+        <button class="pixel-btn" onclick="goToPage(2)">YES ▶</button>
+      </div>
+    </div>
+
+    <!-- PAGE 2: Pop Balloons Game -->
+    <div class="screen" id="page2">
+      <div style="font-size: 11px; color: #db2777; margin-top: 10px;">POP THE BALLOONS!</div>
+      
+      <div class="balloon-container">
+        <div class="game-balloon" id="b1" onclick="popBalloon(1, 'I')">
+          <div class="popped-text">I</div>
+        </div>
+        <div class="game-balloon" id="b2" onclick="popBalloon(2, 'LOVE')">
+          <div class="popped-text">LOVE</div>
+        </div>
+        <div class="game-balloon" id="b3" onclick="popBalloon(3, 'YOU')">
+          <div class="popped-text">YOU</div>
+        </div>
+      </div>
+
+      <div class="pixel-box" id="game-status-box">
+        <p style="font-size: 8px; color: #db2777; line-height: 1.6;">Pop all the balloons to reveal your message!<br>♥ ♥ ♥</p>
+      </div>
+
+      <button class="pixel-btn" id="p2-next-btn" style="display: none;" onclick="goToPage(3)">NEXT ▶</button>
+    </div>
+
+    <!-- PAGE 3: Birthday Cake -->
+    <div class="screen" id="page3">
+      <div class="cake-container" onclick="blowCandle()">
+        <div class="candle" id="candle">
+          <div class="flame" id="flame"></div>
+          <div class="smoke"></div>
+        </div>
+        <div class="pixel-cake">
+          <div class="cake-icing"></div>
+        </div>
+      </div>
+
+      <div class="pixel-box" id="cake-status-box">
+        <p style="font-size: 8px; color: #db2777; line-height: 1.6;" id="cake-text">Make a wish, My Sunflower...</p>
+        <button class="pixel-btn" id="blow-btn" onclick="blowCandle()">Blow the candle! ▶</button>
+      </div>
+
+      <button class="pixel-btn" id="p3-next-btn" style="display: none;" onclick="goToPage(4)">NEXT ▶</button>
+    </div>
+
+    <!-- PAGE 4: Envelope Envelope -->
+    <div class="screen" id="page4">
+      <div class="envelope">
+        <div class="envelope-flap"></div>
+        <div class="envelope-heart">♥</div>
+      </div>
+
+      <div class="pixel-box">
+        <p style="font-size: 8px; color: #db2777; line-height: 1.6;">A little letter for you...</p>
+        <button class="pixel-btn" onclick="goToPage(5)">Click to reveal! ▶</button>
+      </div>
+    </div>
+
+    <!-- PAGE 5: Love Letter -->
+    <div class="screen" id="page5">
+      <div class="letter-box">
+        <p><strong>HAPPIEST BIRTHDAY JAANU! 🥺💋</strong></p>
+        <p>I hope that you loved my little gift which I've been working on, but but BUT! it's your special day today.</p>
+        <p>You're another year older and even more stronger! i pray to god that your this year will be filled with love and happiness and ME. You bring so much love and warmth in my life🥹🌟 I'm so so so blessed to have you in my life.</p>
+        <p>I'll forever be here for you and will love you till my last breathe🫶🏻🫠 without you everything is so dull and bad for me ngl, that's why I call you my sunflower🥹💋 Teko kisiki nazar na lage mere meet, tu hamesha ese hi aage badhte rahiyo aur masti karte rahiyo (meko pyaar bhi uff)</p>
+        <p>Will be ending this letter here, but remember I LOVE YOU SO SO SO MUCH🫵🏻🫠💋🥹UMAAAHHHHHHHH.</p>
+        <p>With DHER SARA love and best wishes,<br><strong>Your dimaag se paidal bachhi💋</strong></p>
+      </div>
+
+      <button class="pixel-btn" onclick="goToPage(6)">NEXT ▶</button>
+    </div>
+
+    <!-- PAGE 6: Final Screen with Pixel Art Sunflower -->
+    <div class="screen" id="page6">
+      <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; width: 100%;">
+        <div class="pixel-box">
+          <p style="font-size: 11px; line-height: 1.8; color: #db2777;">
+            Happiest Birthday, Meet.<br><br>You're loved by me.
+          </p>
+          <div style="color: #f472b6; margin-top: 10px;">♥ ♥ ♥</div>
+        </div>
+
+        <!-- Reference Pixel Art SVG Sunflower -->
+        <div class="pixel-sunflower-wrapper">
+          <svg class="pixel-sunflower-svg" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Stem -->
+            <rect x="15" y="20" width="2" height="15" fill="#15803d"/>
+            <rect x="14" y="21" width="1" height="14" fill="#166534"/>
+            <!-- Left Leaf -->
+            <rect x="11" y="26" width="3" height="2" fill="#22c55e"/>
+            <rect x="10" y="27" width="3" height="2" fill="#15803d"/>
+            <rect x="9" y="28" width="2" height="1" fill="#166534"/>
+            <!-- Right Leaf -->
+            <rect x="18" y="24" width="3" height="2" fill="#22c55e"/>
+            <rect x="19" y="25" width="3" height="2" fill="#15803d"/>
+            <rect x="21" y="26" width="2" height="1" fill="#166534"/>
+
+            <!-- Outer Yellow Petals -->
+            <!-- Top / Bottom / Sides -->
+            <rect x="14" y="2" width="4" height="3" fill="#facc15"/>
+            <rect x="14" y="17" width="4" height="3" fill="#facc15"/>
+            <rect x="6" y="10" width="3" height="4" fill="#facc15"/>
+            <rect x="23" y="10" width="3" height="4" fill="#facc15"/>
+
+            <!-- Diagonal Petals -->
+            <rect x="9" y="4" width="3" height="3" fill="#eab308"/>
+            <rect x="20" y="4" width="3" height="3" fill="#eab308"/>
+            <rect x="9" y="15" width="3" height="3" fill="#eab308"/>
+            <rect x="20" y="15" width="3" height="3" fill="#eab308"/>
+
+            <!-- Inner Orange Accent Petals -->
+            <rect x="13" y="4" width="6" height="2" fill="#f97316"/>
+            <rect x="13" y="16" width="6" height="2" fill="#f97316"/>
+            <rect x="8" y="9" width="2" height="6" fill="#f97316"/>
+            <rect x="22" y="9" width="2" height="6" fill="#f97316"/>
+
+            <!-- Center Seed Core (Dark Brown & Pixel Pattern) -->
+            <rect x="11" y="6" width="10" height="10" fill="#78350f"/>
+            <rect x="12" y="7" width="8" height="8" fill="#451a03"/>
+            <rect x="13" y="8" width="2" height="2" fill="#78350f"/>
+            <rect x="17" y="8" width="2" height="2" fill="#78350f"/>
+            <rect x="15" y="10" width="2" height="2" fill="#78350f"/>
+            <rect x="13" y="12" width="2" height="2" fill="#78350f"/>
+            <rect x="17" y="12" width="2" height="2" fill="#78350f"/>
+          </svg>
+        </div>
+
+        <div class="pixel-box" style="margin-top: 10px; padding: 10px;">
+          <p style="font-size: 9px; color: #db2777; margin: 0;">27/09/2026</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Navigation Logic
+    function goToPage(pageNumber) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('page' + pageNumber).classList.add('active');
+      
+      // Trigger confetti on certain pages
+      if(pageNumber === 1 || pageNumber === 6) {
+        triggerConfetti();
+      }
+    }
+
+    // Balloon Popping Game logic
+    let poppedCount = 0;
+    function popBalloon(id, text) {
+      const b = document.getElementById('b' + id);
+      if (!b.classList.contains('popped')) {
+        b.classList.add('popped');
+        poppedCount++;
+
+        if (poppedCount === 3) {
+          triggerConfetti();
+          document.getElementById('game-status-box').innerHTML = '<p style="font-size: 8px; color: #db2777;">You did it! ♥</p>';
+          document.getElementById('p2-next-btn').style.display = 'inline-block';
+        }
+      }
+    }
+
+    // Candle Blowing Logic
+    let candleBlown = false;
+    function blowCandle() {
+      if (!candleBlown) {
+        candleBlown = true;
+        document.getElementById('flame').classList.add('off');
+        document.getElementById('candle').classList.add('blown');
+        triggerConfetti();
+        
+        document.getElementById('cake-text').innerHTML = 'Woohoo! 🎉<br>Your wish is on its way...<br>♥ ♥ ♥';
+        document.getElementById('blow-btn').style.display = 'none';
+        document.getElementById('p3-next-btn').style.display = 'inline-block';
+      }
+    }
+
+    // Confetti Effect
+    function triggerConfetti() {
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.6 },
+        colors: ['#f472b6', '#fde047', '#ffffff']
+      });
+    }
+
+    // Initial Confetti on load
+    window.onload = function() {
+      triggerConfetti();
+    };
+  </script>
+</body>
+</html>
